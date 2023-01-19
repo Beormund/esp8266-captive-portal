@@ -45,6 +45,16 @@ class CaptivePortal:
         self.ap_if.config(essid=self.essid, authmode=network.AUTH_OPEN)
         print("AP mode configured:", self.ap_if.ifconfig())
 
+    def get_wifi_aps(self):
+        self.sta_if.active(True)
+        print("Scanning for APs....")
+        ssids = ""
+        for ssid, *_ in self.sta_if.scan():
+            ssid = ssid.decode("utf-8")
+            ssids += "<option value='%s'>%s</option>" % ( ssid, ssid )
+        self.sta_if.active(False)
+        return ssids
+
     def connect_to_wifi(self):
         print(
             "Trying to connect to SSID '{:s}' with password {:s}".format(
@@ -106,9 +116,9 @@ class CaptivePortal:
     def captive_portal(self):
         print("Starting captive portal")
         self.start_access_point()
-
+        aps = self.get_wifi_aps()
         if self.http_server is None:
-            self.http_server = HTTPServer(self.poller, self.local_ip)
+            self.http_server = HTTPServer(self.poller, self.local_ip, aps)
             print("Configured HTTP server")
         if self.dns_server is None:
             self.dns_server = DNSServer(self.poller, self.local_ip)

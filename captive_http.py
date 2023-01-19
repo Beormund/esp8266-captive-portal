@@ -41,7 +41,7 @@ def unquote(string):
 
 
 class HTTPServer(Server):
-    def __init__(self, poller, local_ip):
+    def __init__(self, poller, local_ip, aps):
         super().__init__(poller, 80, socket.SOCK_STREAM, "HTTP Server")
         if type(local_ip) is bytes:
             self.local_ip = local_ip
@@ -49,8 +49,8 @@ class HTTPServer(Server):
             self.local_ip = local_ip.encode()
         self.request = dict()
         self.conns = dict()
-        self.routes = {b"/": b"./index.html", b"/login": self.login}
-
+        self.routes = {b"/": self.show_index, b"/login": self.login}
+        self.ap_list = aps
         self.ssid = None
 
         # queue up to 5 connection requests before refusing
@@ -126,6 +126,11 @@ class HTTPServer(Server):
         )
 
         return b"", headers
+
+    def show_index(self, params):
+        headers = b"HTTP/1.1 200 OK\r\n"
+        body = open("./index.html", "rb").read() % (self.ap_list)
+        return body, headers
 
     def connected(self, params):
         headers = b"HTTP/1.1 200 OK\r\n"
